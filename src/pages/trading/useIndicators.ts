@@ -10,6 +10,16 @@ import {
   atr,
   stochastic,
   vwap,
+  obv,
+  williamsR,
+  momentum,
+  aroon,
+  cci,
+  adx,
+  ichimoku,
+  parabolicSar,
+  pivotPoints,
+  fibonacciRetracement,
   INDICATOR_REGISTRY,
   type IndicatorType,
 } from "../../lib/indicators.ts";
@@ -201,41 +211,176 @@ export function useIndicators(
           indicatorSeriesRef.current.set("VWAP", s);
           break;
         }
-        case "PINESCRIPT": {
-          if (!pineScriptSource) break;
-          // Async PineScript execution — run engine and render results
-          (async () => {
-            try {
-              const result = await runPineScript(pineScriptSource, indCandles, {
-                symbol: "BTCUSD",
-                timeframe: "1d",
-              });
-              if (result.errors.length > 0) {
-                console.warn("PineScript errors:", result.errors);
-                return;
-              }
-              // Use the first plot output by default
-              const firstPlot = result.plots[0];
-              if (!firstPlot) return;
-              pineScriptResultsRef.current = [
-                { title: firstPlot.title, data: firstPlot.data },
-              ];
-              // Render the PineScript plot on the chart
-              const s = chart.addLineSeries({
-                color: config.color,
-                lineWidth: 1,
-                priceScaleId: "right",
-              });
-              s.setData(
-                firstPlot.data.map((p) => ({ time: p.time as Time, value: p.value })),
-              );
-              indicatorSeriesRef.current.set("PINESCRIPT", s);
-            } catch (err) {
-              console.error("PineScript execution error:", err);
-            }
-          })();
-          break;
-        }
+         case "PINESCRIPT": {
+           if (!pineScriptSource) break;
+           // Async PineScript execution — run engine and render results
+           (async () => {
+             try {
+               const result = await runPineScript(pineScriptSource, indCandles, {
+                 symbol: "BTCUSD",
+                 timeframe: "1d",
+               });
+               if (result.errors.length > 0) {
+                 console.warn("PineScript errors:", result.errors);
+                 return;
+               }
+               // Render all plot outputs
+               result.plots.forEach((plot, idx) => {
+                 const s = chart.addLineSeries({
+                   color: config.color,
+                   lineWidth: 1,
+                   priceScaleId: "right",
+                 });
+                 s.setData(
+                   plot.data.map((p) => ({ time: p.time as Time, value: p.value })),
+                 );
+                 indicatorSeriesRef.current.set(`PINESCRIPT-plot-${idx}`, s);
+               });
+               // Render markers (plotshape, plotchar, etc.)
+               result.markers.forEach((marker) => {
+                 const markerData = marker.data.filter((d): d is IndicatorPoint => d !== null);
+                 if (markerData.length === 0) return;
+                 const s = chart.addLineSeries({
+                   color: config.color,
+                   lineWidth: 1,
+                   priceScaleId: "right",
+                 });
+                 s.setData(
+                   markerData.map((p) => ({ time: p.time as Time, value: p.value })),
+                 );
+                 indicatorSeriesRef.current.set(`PINESCRIPT-marker-${marker.id}`, s);
+               });
+               // Render horizontal lines
+               result.hlines.forEach((h) => {
+                 const s = chart.addLineSeries({
+                   color: config.color,
+                   lineWidth: 1,
+                   lineStyle: LineStyle.Dashed,
+                   priceScaleId: "right",
+                 });
+                 // Render hline as a single-point series at the price level
+                 s.setData([{ time: indCandles[0]!.time as Time, value: h.price }]);
+                 indicatorSeriesRef.current.set(`PINESCRIPT-hline-${h.id}`, s);
+               });
+             } catch (err) {
+               console.error("PineScript execution error:", err);
+             }
+           })();
+           break;
+         }
+         case "OBV": {
+           const data = obv(indCandles);
+           const s = chart.addLineSeries({ color: config.color, lineWidth: 1, priceScaleId: "right" });
+           s.setData(data.map((p) => ({ time: p.time as Time, value: p.value })));
+           indicatorSeriesRef.current.set("OBV", s);
+           break;
+         }
+         case "WILLIAMS_R": {
+           const data = williamsR(indCandles, config.defaultParams.period);
+           const s = chart.addLineSeries({ color: config.color, lineWidth: 1, priceScaleId: "right" });
+           s.setData(data.map((p) => ({ time: p.time as Time, value: p.value })));
+           indicatorSeriesRef.current.set("WILLIAMS_R", s);
+           break;
+         }
+         case "MOMENTUM": {
+           const data = momentum(indCandles, config.defaultParams.period);
+           const s = chart.addLineSeries({ color: config.color, lineWidth: 1, priceScaleId: "right" });
+           s.setData(data.map((p) => ({ time: p.time as Time, value: p.value })));
+           indicatorSeriesRef.current.set("MOMENTUM", s);
+           break;
+         }
+         case "AROON": {
+           const data = aroon(indCandles, config.defaultParams.period);
+           const up = chart.addLineSeries({ color: "#2196f3", lineWidth: 1, priceScaleId: "aroon" });
+           up.setData(data.aroonUp.map((p) => ({ time: p.time as Time, value: p.value })));
+           indicatorSeriesRef.current.set("AROON-up", up);
+           const down = chart.addLineSeries({ color: "#f44336", lineWidth: 1, priceScaleId: "aroon" });
+           down.setData(data.aroonDown.map((p) => ({ time: p.time as Time, value: p.value })));
+           indicatorSeriesRef.current.set("AROON-down", down);
+           break;
+         }
+         case "CCI": {
+           const data = cci(indCandles, config.defaultParams.period);
+           const s = chart.addLineSeries({ color: config.color, lineWidth: 1, priceScaleId: "right" });
+           s.setData(data.map((p) => ({ time: p.time as Time, value: p.value })));
+           indicatorSeriesRef.current.set("CCI", s);
+           break;
+         }
+         case "ADX": {
+           const data = adx(indCandles, config.defaultParams.period);
+           const adxLine = chart.addLineSeries({ color: config.color, lineWidth: 1, priceScaleId: "adx" });
+           adxLine.setData(data.adx.map((p) => ({ time: p.time as Time, value: p.value })));
+           indicatorSeriesRef.current.set("ADX", adxLine);
+           const diPlus = chart.addLineSeries({ color: "#4caf50", lineWidth: 1, priceScaleId: "adx" });
+           diPlus.setData(data.diPlus.map((p) => ({ time: p.time as Time, value: p.value })));
+           indicatorSeriesRef.current.set("ADX-plus", diPlus);
+           const diMinus = chart.addLineSeries({ color: "#f44336", lineWidth: 1, priceScaleId: "adx" });
+           diMinus.setData(data.diMinus.map((p) => ({ time: p.time as Time, value: p.value })));
+           indicatorSeriesRef.current.set("ADX-minus", diMinus);
+           break;
+         }
+         case "ICHIMOKU": {
+           const data = ichimoku(indCandles, config.defaultParams.tenkan, config.defaultParams.kijun, config.defaultParams.senkouB);
+           const tenkan = chart.addLineSeries({ color: "#ff9800", lineWidth: 1, priceScaleId: "ichimoku" });
+           tenkan.setData(data.tenkan.map((p) => ({ time: p.time as Time, value: p.value })));
+           indicatorSeriesRef.current.set("ICHIMOKU-tenkan", tenkan);
+           const kijun = chart.addLineSeries({ color: "#2196f3", lineWidth: 1, priceScaleId: "ichimoku" });
+           kijun.setData(data.kijun.map((p) => ({ time: p.time as Time, value: p.value })));
+           indicatorSeriesRef.current.set("ICHIMOKU-kijun", kijun);
+           const senkouA = chart.addLineSeries({ color: "#4caf50", lineWidth: 1, priceScaleId: "ichimoku" });
+           senkouA.setData(data.senkouA.map((p) => ({ time: p.time as Time, value: p.value })));
+           indicatorSeriesRef.current.set("ICHIMOKU-senkouA", senkouA);
+           const senkouB = chart.addLineSeries({ color: "#e91e63", lineWidth: 1, priceScaleId: "ichimoku" });
+           senkouB.setData(data.senkouB.map((p) => ({ time: p.time as Time, value: p.value })));
+           indicatorSeriesRef.current.set("ICHIMOKU-senkouB", senkouB);
+           break;
+         }
+         case "PARABOLIC_SAR": {
+           const data = parabolicSar(indCandles, config.defaultParams.startAccel, config.defaultParams.maxAccel);
+           const s = chart.addLineSeries({ color: config.color, lineWidth: 1, priceScaleId: "right" });
+           s.setData(data.map((p) => ({ time: p.time as Time, value: p.value })));
+           indicatorSeriesRef.current.set("PARABOLIC_SAR", s);
+           break;
+         }
+         case "PIVOT_POINTS": {
+           const pp = pivotPoints(indCandles);
+           if (!pp) break;
+           const levels = [
+             { value: pp.pivot, label: "P" },
+             { value: pp.r1, label: "R1" },
+             { value: pp.r2, label: "R2" },
+             { value: pp.r3, label: "R3" },
+             { value: pp.s1, label: "S1" },
+             { value: pp.s2, label: "S2" },
+             { value: pp.s3, label: "S3" },
+           ];
+           levels.forEach((lvl) => {
+             const s = chart.addLineSeries({
+               color: config.color,
+               lineWidth: 1,
+               lineStyle: LineStyle.Dashed,
+               priceScaleId: "right",
+             });
+             s.setData([{ time: indCandles[0]!.time as Time, value: lvl.value }]);
+             indicatorSeriesRef.current.set(`PIVOT-${lvl.label}`, s);
+           });
+           break;
+         }
+         case "FIBONACCI": {
+           const fib = fibonacciRetracement(indCandles, config.defaultParams.lookback);
+           if (!fib) break;
+           fib.forEach((level) => {
+             const s = chart.addLineSeries({
+               color: config.color,
+               lineWidth: 1,
+               lineStyle: LineStyle.Dashed,
+               priceScaleId: "right",
+             });
+             s.setData([{ time: indCandles[0]!.time as Time, value: level.price }]);
+             indicatorSeriesRef.current.set(`FIB-${level.label}`, s);
+           });
+           break;
+         }
       }
     }
     // chartRef/candleSeriesRef are stable refs; colors derived from isDark dep.
