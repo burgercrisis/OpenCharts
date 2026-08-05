@@ -37,6 +37,7 @@ import { CrosshairHighlightPrimitive } from "../../lib/chart-plugins/highlight-b
 import { SessionBreaks } from "../../lib/chart-plugins/session-breaks/session-breaks.ts";
 import { SessionHighlighting } from "../../lib/chart-plugins/session-highlighting/session-highlighting.ts";
 import { TooltipPrimitive } from "../../lib/chart-plugins/tooltip/tooltip.ts";
+import { VolumeProfile } from "../../lib/chart-plugins/volume-profile/volume-profile.ts";
 import type { IndicatorType } from "../../lib/indicators.ts";
 import { cn } from "../../lib/utils.ts";
 import { api } from "../../services/api.ts";
@@ -310,6 +311,7 @@ const PLUGIN_FACTORIES: Record<string, (ctx: PluginBuildCtx) => ISeriesPrimitive
   bands: () => new BandsIndicator(),
   tooltip: () => new TooltipPrimitive({}),
   "delta-tooltip": () => new DeltaTooltipPrimitive({}),
+  "volume-profile": () => new VolumeProfile(),
 };
 
 function buildPlugin(id: string, ctx: PluginBuildCtx): ISeriesPrimitive<Time> | null {
