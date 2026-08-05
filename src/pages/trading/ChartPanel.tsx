@@ -45,6 +45,9 @@ import type { Candle, Order, Position, Symbol } from "../../services/schemas.ts"
 import { toast } from "../../services/toast.ts";
 import {
   CHART_COLORS,
+  CHART_TYPE_ALL,
+  CHART_TYPE_STANDARD,
+  type ChartType,
   type DrawingLine,
   type DrawingTool,
   type MagnetMode,
@@ -197,6 +200,7 @@ export interface ChartPanelProps {
   candles: Candle[];
   selectedSymbol: string;
   timeframe: Timeframe;
+  chartType: ChartType;
   isDark: boolean;
   activeIndicators: IndicatorType[];
   drawingTool: DrawingTool;
@@ -1110,7 +1114,10 @@ export function ChartPanel({
   const lastGapRefetchAtRef = useRef<number>(0);
   const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
-  const candleSeriesRef = useRef<ISeriesApi<"Candlestick"> | null>(null);
+   const candleSeriesRef = useRef<
+     ISeriesApi<"Candlestick"> | ISeriesApi<"Line"> | ISeriesApi<"Area"> | ISeriesApi<"Bar"> | null
+   >(null);
+   const customSeriesRef = useRef<ISeriesPrimitive<Time> | null>(null);
 
   // Scroll-triggered historical extension — older bars prepended as the user
   // scrolls left past what the initial deep-fetch already loaded.
@@ -1512,40 +1519,93 @@ export function ChartPanel({
 
     chartRef.current = chart;
 
-    const candleSeries = chart.addCandlestickSeries({
-      upColor: colors.up,
-      downColor: colors.down,
-      borderUpColor: colors.up,
-      borderDownColor: colors.down,
-      wickUpColor: colors.up,
-      wickDownColor: colors.down,
-      priceFormat: {
-        type: "price",
-        precision: pipDigits,
-        minMove,
-      },
-      // Hide the candle's own last-value label and default close price-line.
-      // Candle close is the mid price ((bid+ask)/2) — with a 1-pip spread that
-      // sits half a pip below Ask, so the mid label stacks visually next to
-      // the Ask label and rounds to the same 5-decimal string. The explicit
-      // Bid/Ask price lines below are the authoritative right-edge prices for
-      // trading; the mid label is redundant and creates the "misaligned" look.
-      lastValueVisible: false,
-      priceLineVisible: false,
-      priceLineWidth: 1,
-      priceLineColor: "",
-      priceLineStyle: LineStyle.Dotted,
-    });
-    candleSeriesRef.current = candleSeries;
+    // ── Create the price series based on chart type ──────────────
+    let candleSeries: ISeriesApi<"Candlestick"> | ISeriesApi<"Line"> | ISeriesApi<"Area"> | ISeriesApi<"Bar"> | null = null;
+    let customSeriesPrimitive: ISeriesPrimitive<Time> | null = null;
 
-    // Volume histogram at the bottom of the chart
-    const volumeSeries = chart.addHistogramSeries({
-      priceFormat: { type: "volume" },
-      priceScaleId: "volume",
-    });
-    chart.priceScale("volume").applyOptions({
-      scaleMargins: { top: 0.85, bottom: 0 },
-    });
+    if (CHART_TYPE_STANDARD.includes(chartType as typeof CHART_TYPE_STANDARD[number])) {
+      // Standard chart types use native lightweight-charts series
+      const seriesOptions = {
+        upColor: colors.up,
+        downColor: colors.down,
+        borderUpColor: colors.up,
+        borderDownColor: colors.down,
+        wickUpColor: colors.up,
+        wickDownColor: colors.down,
+        priceFormat: {
+          type: "price" as const,
+          precision: pipDigits,
+          minMove,
+        },
+        lastValueVisible: false,
+        priceLineVisible: false,
+        priceLineWidth: 1,
+        priceLineColor: "",
+        priceLineStyle: LineStyle.Dotted,
+      };
+
+      switch (chartType) {
+        case "candlestick":
+          candleSeries = chart.addCandlestickSeries(seriesOptions);
+          break;
+        case "line":
+          candleSeries = chart.addLineSeries({
+            ...seriesOptions,
+            color: colors.up,
+            lineWidth: 1,
+            priceScaleId: "right",
+          });
+          break;
+        case "area":
+          candleSeries = chart.addAreaSeries({
+            ...seriesOptions,
+            lineColor: colors.up,
+            fillColor: colors.up + "33",
+            priceScaleId: "right",
+          });
+          break;
+        case "bar":
+          candleSeries = chart.addBarSeries({
+            ...seriesOptions,
+            upColor: colors.up,
+            downColor: colors.down,
+            priceScaleId: "right",
+          });
+          break;
+        case "hollow_candles":
+          candleSeries = chart.addCandlestickSeries({
+            ...seriesOptions,
+            upColor: "transparent",
+            downColor: "transparent",
+            borderUpColor: colors.up,
+            borderDownColor: colors.down,
+            wickUpColor: colors.up,
+            wickDownColor: colors.down,
+          });
+          break;
+      }
+    } else {
+      // Non-standard chart types (Renko, Kagi, Range, P&F) use custom series
+      // The custom renderer will be attached below after data is set
+    }
+
+    if (candleSeries) {
+      candleSeriesRef.current = candleSeries as ISeriesApi<"Candlestick">;
+    }
+
+    // Volume histogram at the bottom of the chart (only for candlestick)
+    const volumeSeries =
+      chartType === "candlestick"
+        ? chart.addHistogramSeries({
+            priceFormat: { type: "volume" },
+            priceScaleId: "volume",
+          })
+        : null;
+    if (volumeSeries) {
+      chart.priceScale("volume").applyOptions({
+        scaleMargins: { top: 0.85, bottom: 0 },
+      });
+    }
     volumeSeriesRef.current = volumeSeries;
 
     // Subscribe to crosshair move for OHLCV legend
@@ -1555,9 +1615,15 @@ export function ChartPanel({
         return;
       }
       legendRestoredRef.current = false;
-      const data = param.seriesData.get(candleSeries) as CandlestickData<Time> | undefined;
+      const activeSeries = candleSeriesRef.current ?? customSeriesRef.current;
+      if (!activeSeries) return;
+      const data = param.seriesData.get(activeSeries) as
+        | CandlestickData<Time>
+        | undefined;
       if (data) {
-        const vol = param.seriesData.get(volumeSeries) as HistogramData<Time> | undefined;
+        const vol = volumeSeriesRef.current
+          ? (param.seriesData.get(volumeSeriesRef.current) as HistogramData<Time> | undefined)
+          : undefined;
         setLegend(candleToLegend(data, vol?.value || 0));
       }
     });
