@@ -1,5 +1,6 @@
 import {
   CandlestickChart,
+  ChartNoAxesCombined,
   Crosshair,
   GripVertical,
   Newspaper,
@@ -12,7 +13,13 @@ import { useState, type ReactNode } from "react";
 import { type ChartPreferences, updateChartPreferences } from "../../hooks/useChartPreferences.ts";
 import { useDragOffset } from "../../hooks/useDragOffset.ts";
 import { cn } from "../../lib/utils.ts";
-import { CHART_COLORS, type ChartColors } from "./constants.ts";
+import {
+  CHART_TYPE_ALL,
+  CHART_TYPE_CONFIG,
+  type ChartType,
+  CHART_COLORS,
+  type ChartColors,
+} from "./constants.ts";
 
 // ── Chart Settings dialog ─────────────────────────────────────────────────────
 // Opened from the chart context menu. Every control writes straight through
@@ -30,6 +37,10 @@ export interface ChartSettingsDialogProps {
   onOpenNewsConfig: () => void;
   /** Whether the account has challenge metrics (controls the Challenge tab note). */
   hasAccount: boolean;
+  /** Current chart type for settings display. */
+  chartType?: ChartType;
+  /** Callback when chart type changes from settings. */
+  onChartTypeChange?: (ct: ChartType) => void;
 }
 
 type TabId = "appearance" | "colors" | "trading" | "events" | "challenge";
@@ -204,10 +215,32 @@ function SectionTitle({ children }: { children: ReactNode }) {
   );
 }
 
-function AppearanceTab({ prefs }: { prefs: ChartPreferences }) {
+function AppearanceTab({ prefs, chartType, onChartTypeChange }: { prefs: ChartPreferences; chartType?: ChartType; onChartTypeChange?: (ct: ChartType) => void }) {
   const set = updateChartPreferences;
   return (
     <div>
+      <SectionTitle>Chart Type</SectionTitle>
+      {onChartTypeChange && (
+        <div className="flex flex-wrap gap-1 mb-3">
+          {CHART_TYPE_ALL.map((ct) => {
+            const config = CHART_TYPE_CONFIG[ct];
+            return (
+              <button
+                key={ct}
+                onClick={() => onChartTypeChange(ct)}
+                className={cn(
+                  "px-2 py-1 rounded text-xs font-medium transition-all",
+                  ct === chartType
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-secondary text-muted-foreground hover:text-foreground",
+                )}
+              >
+                {config.label}
+              </button>
+            );
+          })}
+        </div>
+      )}
       <SectionTitle>Candles</SectionTitle>
       <ToggleRow label="Wicks" checked={prefs.showWicks} onChange={(v) => set({ showWicks: v })} />
       <ToggleRow
