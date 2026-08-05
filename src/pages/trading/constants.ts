@@ -3,6 +3,114 @@
 export const TIMEFRAMES = ["1m", "5m", "15m", "30m", "1h", "4h", "1d", "1w"] as const;
 export type Timeframe = (typeof TIMEFRAMES)[number];
 
+// ── Chart Types ──────────────────────────────────────────────────────
+
+export type ChartType =
+  | "candlestick"
+  | "line"
+  | "area"
+  | "bar"
+  | "hollow_candles"
+  | "renko"
+  | "kagi"
+  | "range"
+  | "point_and_figure";
+
+export type ChartTypeCategory = "standard" | "non_standard";
+
+export interface ChartTypeConfig {
+  type: ChartType;
+  label: string;
+  category: ChartTypeCategory;
+  description: string;
+  /** Default brick/box size for non-standard types (price units). */
+  defaultBrickSize?: number;
+  /** Default reversal amount for non-standard types (number of boxes). */
+  defaultReversalAmount?: number;
+}
+
+export const CHART_TYPE_CONFIG: Record<ChartType, ChartTypeConfig> = {
+  candlestick: {
+    type: "candlestick",
+    label: "Candlestick",
+    category: "standard",
+    description: "Traditional OHLC candlestick chart",
+  },
+  line: {
+    type: "line",
+    label: "Line",
+    category: "standard",
+    description: "Line chart showing close prices",
+  },
+  area: {
+    type: "area",
+    label: "Area",
+    category: "standard",
+    description: "Area chart showing close prices with fill",
+  },
+  bar: {
+    type: "bar",
+    label: "Bar",
+    category: "standard",
+    description: "OHLC bar chart",
+  },
+  hollow_candles: {
+    type: "hollow_candles",
+    label: "Hollow Candles",
+    category: "standard",
+    description: "Candlestick chart with hollow bodies",
+  },
+  renko: {
+    type: "renko",
+    label: "Renko",
+    category: "non_standard",
+    description: "Renko chart — bricks form when price moves by brick size",
+    defaultBrickSize: 0,
+  },
+  kagi: {
+    type: "kagi",
+    label: "Kagi",
+    category: "non_standard",
+    description: "Kagi chart — direction changes on reversal amount",
+    defaultReversalAmount: 0,
+  },
+  range: {
+    type: "range",
+    label: "Range",
+    category: "non_standard",
+    description: "Range chart — new box when high-low exceeds box size",
+    defaultBrickSize: 0,
+  },
+  point_and_figure: {
+    type: "point_and_figure",
+    label: "Point & Figure",
+    category: "non_standard",
+    description: "Point & Figure chart — X/O columns with box and reversal settings",
+    defaultBrickSize: 0,
+    defaultReversalAmount: 0,
+  },
+};
+
+export const CHART_TYPE_STANDARD: ChartType[] = [
+  "candlestick",
+  "line",
+  "area",
+  "bar",
+  "hollow_candles",
+];
+
+export const CHART_TYPE_NON_STANDARD: ChartType[] = [
+  "renko",
+  "kagi",
+  "range",
+  "point_and_figure",
+];
+
+export const CHART_TYPE_ALL: ChartType[] = [
+  ...CHART_TYPE_STANDARD,
+  ...CHART_TYPE_NON_STANDARD,
+];
+
 /**
  * Master switch for session replay (HUD + scrubber). Disabled on the live
  * terminal until the feature is fully QA'd — flip to `true` to re-enable the
