@@ -32,6 +32,31 @@ export interface PineScriptCandle {
   colors: (string | null)[];
 }
 
+/** Result of a PineScript strategy backtest run. */
+export interface StrategyResult {
+  trades: StrategyTrade[];
+  equityCurve: Array<{ time: number; value: number }>;
+  totalPnL: number;
+  winRate: number;
+  maxDrawdown: number;
+  sharpeRatio: number;
+  /** Any compilation or runtime errors. */
+  errors: string[];
+}
+
+/** A single trade from a PineScript strategy backtest. */
+export interface StrategyTrade {
+  id: number;
+  entryTime: number;
+  exitTime: number | null;
+  entryPrice: number;
+  exitPrice: number | null;
+  quantity: number;
+  pnl: number;
+  side: "long" | "short";
+  status: "open" | "closed";
+}
+
 /** Complete output from a PineScript indicator run. */
 export interface PineScriptResult {
   plots: PineScriptPlot[];

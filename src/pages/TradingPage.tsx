@@ -17,6 +17,7 @@ import {
 } from "../hooks/useChartPreferences.ts";
 import { useTradeSound } from "../hooks/useTradeSound";
 import type { IndicatorType } from "../lib/indicators.ts";
+import type { StrategyResult } from "../lib/pinescript/types.ts";
 import { posthog } from "../lib/posthog";
 import type { CreateJournalEntryInput, UpdateJournalEntryInput } from "../services/api/journal.ts";
 import { api } from "../services/api.ts";
@@ -39,6 +40,7 @@ import { BottomPanel } from "./trading/BottomPanel.tsx";
 import { ChartPanel } from "./trading/ChartPanel.tsx";
 import { ChartToolbar } from "./trading/ChartToolbar.tsx";
 import { PineScriptEditor } from "../components/PineScriptEditor.tsx";
+import { StrategyResultsPanel } from "../components/StrategyResultsPanel.tsx";
 import {
   type ChartType,
   type DrawingTool,
@@ -166,9 +168,12 @@ export function TradingPage() {
   >("positions");
   const { data: aiTraderEnabled } = useAiTraderEnabled();
   const [rightPanel, setRightPanel] = useState<
-    "order" | "dom" | "watchlist" | "news" | "ai-trader" | "tv-analysis" | "pinescript"
+    "order" | "dom" | "watchlist" | "news" | "ai-trader" | "tv-analysis" | "pinescript" | "strategies"
   >("order");
   const [pineScriptSource, setPineScriptSource] = useState<string | null>(null);
+  const [strategyResult, setStrategyResult] = useState<StrategyResult | null>(null);
+  const [strategyLoading, setStrategyLoading] = useState(false);
+  const [strategyError, setStrategyError] = useState<string | null>(null);
   const [showRightPanel, setShowRightPanel] = useState(true);
 
   // ── Vertical resize: chart vs bottom panel ──
@@ -647,6 +652,15 @@ export function TradingPage() {
                   onResult={(_res, src) => {
                     setPineScriptSource(src);
                   }}
+                />
+              </div>
+            )}
+            {rightPanel === "strategies" && (
+              <div className="flex-1 flex flex-col overflow-hidden">
+                <StrategyResultsPanel
+                  result={strategyResult}
+                  loading={strategyLoading}
+                  error={strategyError}
                 />
               </div>
             )}
