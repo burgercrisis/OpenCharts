@@ -508,10 +508,10 @@ function TabBody({
   tab: TabId;
   props: Pick<
     ChartSettingsDialogProps,
-    "prefs" | "isDark" | "activePlugins" | "onTogglePlugin" | "onOpenNewsConfig" | "hasAccount"
+    "prefs" | "isDark" | "activePlugins" | "onTogglePlugin" | "onOpenNewsConfig" | "hasAccount" | "chartType" | "onChartTypeChange"
   > & { onClose: () => void };
 }) {
-  if (tab === "appearance") return <AppearanceTab prefs={props.prefs} />;
+  if (tab === "appearance") return <AppearanceTab prefs={props.prefs} chartType={props.chartType} onChartTypeChange={props.onChartTypeChange} />;
   if (tab === "colors") return <ColorsTab prefs={props.prefs} isDark={props.isDark} />;
   if (tab === "trading") return <TradingTab prefs={props.prefs} />;
   if (tab === "events") {

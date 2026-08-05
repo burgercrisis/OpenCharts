@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { MagnetMode } from "../pages/trading/constants.ts";
+import type { ChartType, MagnetMode } from "../pages/trading/constants.ts";
 import { useAuthStore } from "../services/store.tsx";
 import {
   readTraderPrefs as readScopedTraderPrefs,
@@ -18,6 +18,9 @@ export interface ChartPreferences {
   stayInDrawingMode: boolean;
   /** Plugin IDs that are currently active (persisted across page loads). */
   activePlugins: string[];
+  // ── Chart type ──
+  /** Currently selected chart type (candlestick, line, area, bar, etc.). */
+  chartType: ChartType;
   // ── Appearance (Chart Settings dialog) ──
   /** Hex override for up candles; empty string = theme default. */
   candleUpColor: string;
@@ -65,6 +68,8 @@ const DEFAULT_CHART_PREFS: ChartPreferences = {
   overlayPositionsOnChart: true,
   drawingMagnet: false,
   magnetMode: "none",
+  // ── Chart type ──
+  chartType: "candlestick",
   stayInDrawingMode: false,
   activePlugins: [],
   candleUpColor: "",
@@ -132,6 +137,7 @@ const STRING_PREF_KEYS = [
   "colorTpLine",
   "colorSlLine",
   "activeChartTemplate",
+  "chartType",
 ] as const;
 
 /**
@@ -167,6 +173,7 @@ export const TEMPLATE_PREF_KEYS = [
   "colorOrderLine",
   "colorTpLine",
   "colorSlLine",
+  "chartType",
 ] as const;
 
 export type TemplatePrefKey = (typeof TEMPLATE_PREF_KEYS)[number];

@@ -40,6 +40,7 @@ import { ChartPanel } from "./trading/ChartPanel.tsx";
 import { ChartToolbar } from "./trading/ChartToolbar.tsx";
 import { PineScriptEditor } from "../components/PineScriptEditor.tsx";
 import {
+  type ChartType,
   type DrawingTool,
   type MagnetMode,
   REPLAY_ENABLED,
@@ -113,6 +114,24 @@ export function TradingPage() {
   useEffect(() => {
     const saved = localStorage.getItem(`tf_${selectedSymbol}`);
     if (saved && TIMEFRAMES.includes(saved as Timeframe)) setTimeframe(saved as Timeframe);
+  }, [selectedSymbol]);
+
+  // Chart type persistence
+  const [chartType, setChartType] = useState<ChartType>(() => {
+    const saved = localStorage.getItem(`chartType_${selectedSymbol}`);
+    return saved && CHART_TYPE_ALL.includes(saved as ChartType) ? (saved as ChartType) : "candlestick";
+  });
+  const handleChartTypeChange = useCallback(
+    (ct: ChartType) => {
+      setChartType(ct);
+      localStorage.setItem(`chartType_${selectedSymbol}`, ct);
+    },
+    [selectedSymbol],
+  );
+  // Restore chart type when symbol changes
+  useEffect(() => {
+    const saved = localStorage.getItem(`chartType_${selectedSymbol}`);
+    if (saved && CHART_TYPE_ALL.includes(saved as ChartType)) setChartType(saved as ChartType);
   }, [selectedSymbol]);
 
   const [activeIndicators, setActiveIndicators] = useState<IndicatorType[]>([]);
@@ -425,6 +444,8 @@ export function TradingPage() {
         onSymbolChange={setSelectedSymbol}
         timeframe={timeframe}
         onTimeframeChange={handleTimeframeChange}
+        chartType={chartType}
+        onChartTypeChange={handleChartTypeChange}
         activeIndicators={activeIndicators}
         onToggleIndicator={(type) =>
           setActiveIndicators((prev) =>
@@ -470,6 +491,8 @@ export function TradingPage() {
               candles={replayCandles ?? candles}
               selectedSymbol={selectedSymbol}
               timeframe={replayCandles ? "1m" : timeframe}
+              chartType={chartType}
+              onChartTypeChange={handleChartTypeChange}
               isDark={isDark}
               activeIndicators={activeIndicators}
               drawingTool={drawingTool}

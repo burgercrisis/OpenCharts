@@ -201,6 +201,7 @@ export interface ChartPanelProps {
   selectedSymbol: string;
   timeframe: Timeframe;
   chartType: ChartType;
+  onChartTypeChange?: (ct: ChartType) => void;
   isDark: boolean;
   activeIndicators: IndicatorType[];
   drawingTool: DrawingTool;
@@ -1079,6 +1080,8 @@ export function ChartPanel({
   candles,
   selectedSymbol,
   timeframe,
+  chartType,
+  onChartTypeChange,
   isDark,
   activeIndicators,
   drawingTool,
@@ -2135,6 +2138,8 @@ export function ChartPanel({
         onTogglePlugin={onTogglePlugin}
         onOpenNewsConfig={() => setShowNewsConfigDialog(true)}
         hasAccount={!!accountId}
+        chartType={chartType}
+        onChartTypeChange={onChartTypeChange}
       />
 
       {/* Chart container — cursor is managed imperatively by DrawingToolsManager */}
