@@ -214,6 +214,8 @@ export interface ChartPanelProps {
   magnetMode?: MagnetMode;
   /** Keep the drawing tool armed after each placement. */
   stayInDrawingMode?: boolean;
+  /** PineScript source code to evaluate and render as an indicator. */
+  pineScriptSource?: string | null;
   positions: Position[];
   orders: Order[];
   tick?: { bid: number; ask: number; timestamp: number };
@@ -1086,6 +1088,7 @@ export function ChartPanel({
   onRedoDrawing,
   magnetMode = "none",
   stayInDrawingMode = false,
+  pineScriptSource,
   positions,
   orders,
   tick,
@@ -1389,7 +1392,7 @@ export function ChartPanel({
     [onAddDrawing, pipDigits, timeframe, selectedSymbol],
   );
 
-  useIndicators(chartRef, candleSeriesRef, chartData, activeIndicators, isDark);
+  useIndicators(chartRef, candleSeriesRef, chartData, activeIndicators, isDark, pineScriptSource);
 
   // ── Replay trade event markers ─────────────────────────────
   useEffect(() => {

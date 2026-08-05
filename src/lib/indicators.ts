@@ -259,7 +259,7 @@ export function vwap(candles: CandleData[]): IndicatorPoint[] {
 }
 
 // ── Indicator Registry (for UI) ──────────────────────────────
-export type IndicatorType = "SMA" | "EMA" | "RSI" | "MACD" | "BOLL" | "ATR" | "STOCH" | "VWAP";
+export type IndicatorType = "SMA" | "EMA" | "RSI" | "MACD" | "BOLL" | "ATR" | "STOCH" | "VWAP" | "PINESCRIPT";
 
 export type IndicatorPane = "overlay" | "below";
 
@@ -327,5 +327,12 @@ export const INDICATOR_REGISTRY: IndicatorConfig[] = [
     pane: "overlay",
     defaultParams: {},
     color: "#42a5f5",
+  },
+  {
+    type: "PINESCRIPT",
+    label: "PineScript Indicator",
+    pane: "overlay",
+    defaultParams: {},
+    color: "#00ff88",
   },
 ];

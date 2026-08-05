@@ -1,0 +1,104 @@
+flowchart TD
+    subgraph UserLayer["User Interface Layer"]
+        TradingPage["TradingPage.tsx (716 lines)"]
+        ChartToolbar["ChartToolbar.tsx"]
+        BottomPanel["BottomPanel.tsx"]
+        RightPanel["Right Panel (Order/DOM/Watchlist/News/PineScript)"]
+        ChartContextMenu["ChartContextMenu.tsx"]
+    end
+
+    subgraph ChartEngine["Chart Engine Layer"]
+        LC["lightweight-charts v4.2.0"]
+        FC["fancy-canvas 2"]
+        CustomSeries["CustomSeriesRenderer.tsx"]
+        PluginBase["PluginBase (ISeriesPrimitive<Time>)"]
+    end
+
+    subgraph ChartTypes["Chart Types"]
+        Candlestick["Candlestick (native)"]
+        Line["Line (native)"]
+        Area["Area (native)"]
+        Bar["Bar (native)"]
+        Hollow["Hollow Candles (native)"]
+        Renko["Renko (custom)"]
+        Kagi["Kagi (custom)"]
+        Range["Range (custom)"]
+        PnF["Point & Figure (custom)"]
+    end
+
+    subgraph Indicators["Indicators Layer"]
+        IndRegistry["INDICATOR_REGISTRY (indicators.ts)"]
+        IndComputations["Indicator Functions (indicators.ts)"]
+        IndHook["useIndicators.ts"]
+        PineScript["PineScript Engine (@heyphat/piner)"]
+        StrategyEngine["Strategy Engine (strategy-engine.ts)"]
+        VolumeProfile["Volume Profile Plugin"]
+    end
+
+    subgraph DataLayer["Data Layer"]
+        Api["services/api.ts (Proxy pattern)"]
+        Ws["services/ws.ts (WebSocket client)"]
+        DemoApi["demo/api.ts"]
+        DemoWs["demo/ws.ts"]
+        Store["Zustand Store (store.tsx)"]
+        ReactQuery["TanStack React Query"]
+    end
+
+    subgraph SolanaLayer["Solana Trading Layer"]
+        WalletAdapter["@solana/wallet-adapter-react"]
+        Phantom["PhantomWalletAdapter"]
+        Solflare["SolflareWalletAdapter"]
+        Backpack["BackpackWalletAdapter"]
+        Jupiter["@jup-ag/api (JupiterAggregator)"]
+        SolWeb3["@solana/web3.js"]
+        SplToken["@solana/spl-token"]
+        SolanaProvider["SolanaProvider (App.tsx)"]
+    end
+
+    subgraph Preferences["User Preferences"]
+        ChartPrefs["useChartPreferences (localStorage)"]
+        ChartSettings["ChartSettingsDialog.tsx"]
+    end
+
+    TradingPage --> ChartToolbar
+    TradingPage --> BottomPanel
+    TradingPage --> RightPanel
+    TradingPage --> ChartContextMenu
+
+    TradingPage --> LC
+    LC --> CustomSeries
+    LC --> PluginBase
+    PluginBase --> FC
+    CustomSeries --> ChartTypes
+
+    ChartToolbar --> IndRegistry
+    IndRegistry --> IndComputations
+    IndComputations --> IndHook
+    IndHook --> LC
+    PineScript --> IndHook
+    StrategyEngine --> IndHook
+    VolumeProfile --> PluginBase
+
+    Api --> DemoApi
+    Ws --> DemoWs
+    DemoApi --> Store
+    DemoWs --> Store
+    Store --> ReactQuery
+
+    TradingPage --> SolanaProvider
+    SolanaProvider --> WalletAdapter
+    WalletAdapter --> Phantom
+    WalletAdapter --> Solflare
+    WalletAdapter --> Backpack
+    TradingPage --> Jupiter
+    TradingPage --> SolWeb3
+    TradingPage --> SplToken
+
+    ChartSettings --> ChartPrefs
+    ChartPrefs --> TradingPage
+    ChartPrefs --> IndHook
+    ChartPrefs --> CustomSeries
+
+    TradingPage -.->|"chartType prop"| CustomSeries
+    IndHook -.->|"activeIndicators"| IndRegistry
+    PineScript -.->|"pineScriptSource"| IndHook

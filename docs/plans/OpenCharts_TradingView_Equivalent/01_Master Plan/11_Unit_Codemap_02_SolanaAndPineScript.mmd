@@ -1,0 +1,106 @@
+flowchart TD
+    subgraph TradingPage["TradingPage.tsx"]
+        State["chartType, activeIndicators, chartTypeConfig"]
+        PassChart["pass chartType to ChartPanel"]
+        PassIndicators["pass activeIndicators to useIndicators"]
+        PassSolana["pass solanaWallet to SwapForm"]
+    end
+
+    subgraph ChartPanel["ChartPanel.tsx"]
+        ChartTypeSwitch{"chartType switch"}
+        Candlestick["addCandlestickSeries()"]
+        Line["addLineSeries()"]
+        Area["addAreaSeries()"]
+        Bar["addBarSeries()"]
+        Hollow["addCandlestickSeries() + transparent body"]
+        Custom["addCustomSeries() + CustomSeriesRenderer"]
+    end
+
+    subgraph Indicators["useIndicators.ts"]
+        IndSwitch{"indicator type switch"}
+        SmaCase["SMA → sma() → addLineSeries()"]
+        EmaCase["EMA → ema() → addLineSeries()"]
+        RsiCase["RSI → rsi() → addLineSeries() + ref lines"]
+        MacdCase["MACD → macd() → 3 series"]
+        BollCase["BOLL → bollingerBands() → 3 series"]
+        AtrCase["ATR → atr() → addLineSeries()"]
+        StochCase["STOCH → stochastic() → 2 series"]
+        VwapCase["VWAP → vwap() → addLineSeries()"]
+        PineCase["PINESCRIPT → runPineScript() → multi-plot"]
+        StrategyCase["PINESCRIPT_STRATEGY → strategy-engine.ts"]
+        ObvCase["OBV → obv() → addLineSeries() ← NEW"]
+        WillRCase["Williams %R → williamsR() → addLineSeries() ← NEW"]
+        MomentumCase["Momentum → momentum() → addLineSeries() ← NEW"]
+        AroonCase["Aroon → aroon() → addLineSeries() ← NEW"]
+        CciCase["CCI → cci() → addLineSeries() ← NEW"]
+        AdxCase["ADX → adx() → 3 series ← NEW"]
+        IchimokuCase["Ichimoku → ichimoku() → 5 series ← NEW"]
+        SarCase["Parabolic SAR → parabolicSar() → addLineSeries() ← NEW"]
+        PivotCase["Pivot Points → pivotPoints() → hlines ← NEW"]
+        FibCase["Fibonacci → fibonacciRetracement() → hlines ← NEW"]
+    end
+
+    subgraph SolanaFlow["Solana Trading Flow"]
+        Connect["WalletConnectButton → useWallet()"]
+        Balance["SolanaBalance → getBalance() + getTokenAccounts()"]
+        Swap["SwapForm → JupiterAggregator.findRoutes()"]
+        Sign["wallet.signTransaction()"]
+        Broadcast["connection.sendRawTransaction()"]
+        Confirm["Transaction confirmation → update store"]
+    end
+
+    subgraph PineScriptFlow["PineScript Flow"]
+        Edit["PineScriptEditor → source text"]
+        Compile["compile(source)"]
+        Run["Engine.run()"]
+        Extract["engine.outputs"]
+        Render["Render plots/markers/candles/hlines"]
+    end
+
+    TradingPage --> ChartPanel
+    ChartPanel --> ChartTypeSwitch
+    ChartTypeSwitch --> Candlestick
+    ChartTypeSwitch --> Line
+    ChartTypeSwitch --> Area
+    ChartTypeSwitch --> Bar
+    ChartTypeSwitch --> Hollow
+    ChartTypeSwitch --> Custom
+
+    TradingPage --> Indicators
+    Indicators --> IndSwitch
+    IndSwitch --> SmaCase
+    IndSwitch --> EmaCase
+    IndSwitch --> RsiCase
+    IndSwitch --> MacdCase
+    IndSwitch --> BollCase
+    IndSwitch --> AtrCase
+    IndSwitch --> StochCase
+    IndSwitch --> VwapCase
+    IndSwitch --> PineCase
+    IndSwitch --> StrategyCase
+    IndSwitch --> ObvCase
+    IndSwitch --> WillRCase
+    IndSwitch --> MomentumCase
+    IndSwitch --> AroonCase
+    IndSwitch --> CciCase
+    IndSwitch --> AdxCase
+    IndSwitch --> IchimokuCase
+    IndSwitch --> SarCase
+    IndSwitch --> PivotCase
+    IndSwitch --> FibCase
+
+    TradingPage --> SolanaFlow
+    TradingPage --> PineScriptFlow
+
+    SolanaFlow --> Connect
+    Connect --> Balance
+    Connect --> Swap
+    Swap --> Sign
+    Sign --> Broadcast
+    Broadcast --> Confirm
+
+    PineScriptFlow --> Edit
+    Edit --> Compile
+    Compile --> Run
+    Run --> Extract
+    Extract --> Render

@@ -11,6 +11,7 @@ import {
   ChevronDown,
   Circle,
   Clock,
+  Code,
   Crosshair,
   Equal,
   Info,
@@ -76,7 +77,7 @@ export interface ChartToolbarProps {
   drawings: DrawingLine[];
   onClearDrawings: () => void;
   rightPanel: string;
-  onRightPanel: (p: "order" | "dom" | "watchlist" | "news" | "ai-trader" | "tv-analysis") => void;
+  onRightPanel: (p: "order" | "dom" | "watchlist" | "news" | "ai-trader" | "tv-analysis" | "pinescript") => void;
   aiTraderEnabled?: boolean;
   showRightPanel: boolean;
   onToggleRightPanel: () => void;
@@ -429,6 +430,12 @@ export function ChartToolbar({
             onClick={() => onRightPanel("ai-trader")}
           />
         )}
+        <ToolButton
+          icon={Code}
+          tooltip="PineScript Editor"
+          active={showRightPanel && rightPanel === "pinescript"}
+          onClick={() => onRightPanel("pinescript")}
+        />
         <div className="h-4 border-l border-border mx-1" />
         <button
           onClick={onToggleRightPanel}

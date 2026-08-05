@@ -1,0 +1,99 @@
+flowchart TD
+    subgraph ChartPanel["ChartPanel.tsx (2140 lines)"]
+        CreateChart["createChart()"]
+        AddSeries["addCandlestickSeries / addCustomSeries"]
+        AddVolume["addHistogramSeries (volume)"]
+        AttachPlugins["series.attachPrimitive(plugin)"]
+        HandleData["setData() / update()"]
+        DrawingManager["DrawingToolsManager"]
+        IndicatorHook["useIndicators()"]
+        KeyboardHandler["keydown listener"]
+        ResizeHandler["ResizeObserver"]
+        WsHandler["applyServerCandle() / updateTick()"]
+    end
+
+    subgraph ChartTypes["chart-types/"]
+        Types["types.ts (BrickData, ChartTypeConfig)"]
+        Renko["renko.ts (transformToRenko)"]
+        Kagi["kagi.ts (transformToKagi)"]
+        Range["range.ts (transformToRange)"]
+        PandF["pandf.ts (transformToPandF)"]
+        UseChartData["useChartTypeData.ts"]
+        CustomRenderer["CustomSeriesRenderer.tsx"]
+    end
+
+    subgraph Indicators["indicators.ts"]
+        Sma["sma()"]
+        Ema["ema()"]
+        Rsi["rsi()"]
+        Macd["macd()"]
+        Boll["bollingerBands()"]
+        Atr["atr()"]
+        Stoch["stochastic()"]
+        Vwap["vwap()"]
+        Obv["obv() ← NEW"]
+        WillR["williamsR() ← NEW"]
+        Momentum["momentum() ← NEW"]
+        Aroon["aroon() ← NEW"]
+        Cci["cci() ← NEW"]
+        Adx["adx() ← NEW"]
+        Ichimoku["ichimoku() ← NEW"]
+        Parabolic["parabolicSar() ← NEW"]
+        Pivot["pivotPoints() ← NEW"]
+        Fib["fibonacciRetracement() ← NEW"]
+    end
+
+    subgraph PineScript["PineScript Engine"]
+        Engine["engine.ts (runPineScript, checkPineScript)"]
+        Types["types.ts (PineScriptResult, PineScriptPlot)"]
+        Strategy["strategy-engine.ts ← NEW"]
+        Templates["templates/ ← NEW"]
+        Editor["PineScriptEditor.tsx"]
+    end
+
+    subgraph Solana["Solana Services"]
+        SolTypes["types.ts"]
+        SolConnection["connection.ts"]
+        SolWallet["wallet.ts (useSolanaWallet, SolanaProvider)"]
+        SolJupiter["jupiter.ts (JupiterAggregator)"]
+        SolTokens["tokens.ts"]
+        SolUtils["utils.ts"]
+    end
+
+    subgraph Plugins["chart-plugins/"]
+        PluginBase["plugin-base.ts"]
+        Bands["bands-indicator/"]
+        Tooltip["tooltip/"]
+        Delta["delta-tooltip/"]
+        Crosshair["highlight-bar-crosshair/"]
+        Session["session-highlighting/"]
+        SessionBreaks["session-breaks/"]
+        Drawings["drawing-tools/"]
+        VolumeProfile["volume-profile/ ← NEW"]
+    end
+
+    ChartPanel --> ChartTypes
+    ChartPanel --> Indicators
+    ChartPanel --> PineScript
+    ChartPanel --> Plugins
+    ChartPanel --> Solana
+
+    ChartTypes --> CustomRenderer
+    CustomRenderer --> FC["fancy-canvas 2"]
+
+    Indicators --> IndHook["useIndicators.ts"]
+    IndHook --> ChartPanel
+
+    PineScript --> IndHook
+    Strategy --> IndHook
+
+    Solana --> Store["Zustand Store"]
+    Store --> TradingPage
+
+    Plugins --> PluginBase
+    PluginBase --> LC["lightweight-charts ISeriesPrimitive<Time>"]
+
+    ChartPanel -.->|"chartType prop"| ChartTypes
+    IndHook -.->|"activeIndicators"| Indicators
+    PineScript -.->|"pineScriptSource"| IndHook
+    Solana -.->|"wallet/connection"| TradingPage

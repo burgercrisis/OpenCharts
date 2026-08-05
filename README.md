@@ -90,8 +90,8 @@ It's ideal as:
 > Requires **Node 20+**.
 
 ```bash
-npm install
-npm run dev
+pnpm install
+pnpm run dev
 ```
 
 Open the printed local URL (e.g. `http://localhost:5173`). The app boots straight
@@ -101,8 +101,8 @@ watchlist, set a size in the order panel, and go long or short.
 To build for production:
 
 ```bash
-npm run build      # outputs to dist/
-npm run preview    # serve the production build locally
+pnpm run build      # outputs to dist/
+pnpm run preview    # serve the production build locally
 ```
 
 ## How it works
@@ -215,12 +215,12 @@ Demo instruments are defined in `src/services/demo/instruments.ts`. To add one:
 
 | Command | Description |
 | --- | --- |
-| `npm run dev` | Start the Vite dev server |
-| `npm run build` | Production build to `dist/` |
-| `npm run preview` | Preview the production build |
-| `npm run typecheck` | Type-check the project with `tsc` |
-| `npm run test` | Run the unit test suite (Vitest) |
-| `npm run test:watch` | Run tests in watch mode |
+| `pnpm run dev` | Start the Vite dev server |
+| `pnpm run build` | Production build to `dist/` |
+| `pnpm run preview` | Preview the production build |
+| `pnpm run typecheck` | Type-check the project with `tsc` |
+| `pnpm run test` | Run the unit test suite (Vitest) |
+| `pnpm run test:watch` | Run tests in watch mode |
 | `node scripts/fetch-demo-data.mjs` | Refresh bundled real OHLC |
 
 ## Tech stack
@@ -240,7 +240,7 @@ Demo instruments are defined in `src/services/demo/instruments.ts`. To add one:
   "now". OHLC values are real; the timestamps are remapped to feel live.
 - **Crypto-only demo symbols** out of the box (the bundled data source is Binance).
   Wire your own adapter for FX, futures, or equities.
-- The production `build` runs Vite only; run `npm run typecheck` separately for
+- The production `build` runs Vite only; run `pnpm run typecheck` separately for
   full type checking.
 
 ## Contributing

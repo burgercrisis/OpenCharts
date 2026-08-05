@@ -38,6 +38,7 @@ import { AiTraderPanel } from "./AiTraderPage.tsx";
 import { BottomPanel } from "./trading/BottomPanel.tsx";
 import { ChartPanel } from "./trading/ChartPanel.tsx";
 import { ChartToolbar } from "./trading/ChartToolbar.tsx";
+import { PineScriptEditor } from "../components/PineScriptEditor.tsx";
 import {
   type DrawingTool,
   type MagnetMode,
@@ -146,8 +147,9 @@ export function TradingPage() {
   >("positions");
   const { data: aiTraderEnabled } = useAiTraderEnabled();
   const [rightPanel, setRightPanel] = useState<
-    "order" | "dom" | "watchlist" | "news" | "ai-trader" | "tv-analysis"
+    "order" | "dom" | "watchlist" | "news" | "ai-trader" | "tv-analysis" | "pinescript"
   >("order");
+  const [pineScriptSource, setPineScriptSource] = useState<string | null>(null);
   const [showRightPanel, setShowRightPanel] = useState(true);
 
   // ── Vertical resize: chart vs bottom panel ──
@@ -496,8 +498,9 @@ export function TradingPage() {
               accountId={activeAccountId}
               onQuickOrder={handleQuickOrder}
               onClearDrawings={clearDrawings}
-              onClearIndicators={handleClearIndicators}
-            />
+               onClearIndicators={handleClearIndicators}
+               pineScriptSource={pineScriptSource}
+             />
           </div>
 
           {/* Replay timeline scrubber — disabled until the feature is QA'd */}
@@ -612,6 +615,15 @@ export function TradingPage() {
                   interval={timeframe}
                   width="100%"
                   height="100%"
+                />
+              </div>
+            )}
+            {rightPanel === "pinescript" && (
+              <div className="flex-1 flex flex-col overflow-hidden">
+                <PineScriptEditor
+                  onResult={(_res, src) => {
+                    setPineScriptSource(src);
+                  }}
                 />
               </div>
             )}

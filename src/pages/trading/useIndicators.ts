@@ -13,6 +13,7 @@ import {
   INDICATOR_REGISTRY,
   type IndicatorType,
 } from "../../lib/indicators.ts";
+import { runPineScript } from "../../lib/pinescript/engine.ts";
 import { toIndicatorCandles } from "./utils.ts";
 import { CHART_COLORS } from "./constants.ts";
 
@@ -22,9 +23,13 @@ export function useIndicators(
   chartData: CandlestickData<Time>[],
   activeIndicators: IndicatorType[],
   isDark: boolean,
+  pineScriptSource?: string | null,
 ): void {
   const indicatorSeriesRef = useRef<Map<string, ISeriesApi<"Line"> | ISeriesApi<"Histogram">>>(
     new Map(),
+  );
+  const pineScriptResultsRef = useRef<Array<{ title: string; data: Array<{ time: number; value: number }> }>>(
+    [],
   );
   const colors = isDark ? CHART_COLORS.dark : CHART_COLORS.light;
 
@@ -196,9 +201,44 @@ export function useIndicators(
           indicatorSeriesRef.current.set("VWAP", s);
           break;
         }
+        case "PINESCRIPT": {
+          if (!pineScriptSource) break;
+          // Async PineScript execution — run engine and render results
+          (async () => {
+            try {
+              const result = await runPineScript(pineScriptSource, indCandles, {
+                symbol: "BTCUSD",
+                timeframe: "1d",
+              });
+              if (result.errors.length > 0) {
+                console.warn("PineScript errors:", result.errors);
+                return;
+              }
+              // Use the first plot output by default
+              const firstPlot = result.plots[0];
+              if (!firstPlot) return;
+              pineScriptResultsRef.current = [
+                { title: firstPlot.title, data: firstPlot.data },
+              ];
+              // Render the PineScript plot on the chart
+              const s = chart.addLineSeries({
+                color: config.color,
+                lineWidth: 1,
+                priceScaleId: "right",
+              });
+              s.setData(
+                firstPlot.data.map((p) => ({ time: p.time as Time, value: p.value })),
+              );
+              indicatorSeriesRef.current.set("PINESCRIPT", s);
+            } catch (err) {
+              console.error("PineScript execution error:", err);
+            }
+          })();
+          break;
+        }
       }
     }
     // chartRef/candleSeriesRef are stable refs; colors derived from isDark dep.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeIndicators, chartData, isDark]);
+  }, [activeIndicators, chartData, isDark, pineScriptSource]);
 }
