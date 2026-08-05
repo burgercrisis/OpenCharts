@@ -42,6 +42,12 @@ import { useEffect, useRef, useState } from "react";
 import { INDICATOR_REGISTRY, type IndicatorType } from "../../lib/indicators.ts";
 import { cn, formatNumber } from "../../lib/utils.ts";
 import {
+  CHART_TYPE_ALL,
+  CHART_TYPE_NON_STANDARD,
+  CHART_TYPE_STANDARD,
+  type ChartType,
+  type ChartTypeConfig,
+  CHART_TYPE_CONFIG,
   type DrawingLine,
   type DrawingTool,
   type MagnetMode,
@@ -68,6 +74,8 @@ export interface ChartToolbarProps {
   onSymbolChange: (s: string) => void;
   timeframe: Timeframe;
   onTimeframeChange: (tf: Timeframe) => void;
+  chartType: ChartType;
+  onChartTypeChange: (ct: ChartType) => void;
   activeIndicators: IndicatorType[];
   onToggleIndicator: (type: IndicatorType) => void;
   showIndicatorMenu: boolean;
@@ -114,6 +122,8 @@ export function ChartToolbar({
   onSymbolChange,
   timeframe,
   onTimeframeChange,
+  chartType,
+  onChartTypeChange,
   activeIndicators,
   onToggleIndicator,
   showIndicatorMenu,
@@ -288,26 +298,54 @@ export function ChartToolbar({
         </div>
       )}
 
-      {/* Timeframe Selector — locked to 1m while a replay session is active */}
-      <div className="flex items-center gap-0.5 ml-1 shrink-0">
-        {TIMEFRAMES.map((tf) => (
-          <button
-            key={tf}
-            onClick={() => onTimeframeChange(tf)}
-            disabled={isReplaying}
-            title={isReplaying ? "Timeframe is fixed to 1m during replay" : undefined}
-            className={cn(
-              "px-2 py-1 rounded-md text-xs font-medium transition-all",
-              tf === timeframe
-                ? "bg-primary text-primary-foreground shadow-sm"
-                : "hover:bg-secondary/80 text-muted-foreground hover:text-foreground",
-              isReplaying && "opacity-40 cursor-default",
-            )}
-          >
-            {tf}
-          </button>
-        ))}
-      </div>
+       {/* Timeframe Selector — locked to 1m while a replay session is active */}
+       <div className="flex items-center gap-0.5 ml-1 shrink-0">
+         {TIMEFRAMES.map((tf) => (
+           <button
+             key={tf}
+             onClick={() => onTimeframeChange(tf)}
+             disabled={isReplaying}
+             title={isReplaying ? "Timeframe is fixed to 1m during replay" : undefined}
+             className={cn(
+               "px-2 py-1 rounded-md text-xs font-medium transition-all",
+               tf === timeframe
+                 ? "bg-primary text-primary-foreground shadow-sm"
+                 : "hover:bg-secondary/80 text-muted-foreground hover:text-foreground",
+               isReplaying && "opacity-40 cursor-default",
+             )}
+           >
+             {tf}
+           </button>
+         ))}
+       </div>
+
+       {/* Chart Type Selector */}
+       <div className="flex items-center gap-0.5 ml-1 shrink-0">
+         {CHART_TYPE_STANDARD.map((ct) => {
+           const config = CHART_TYPE_CONFIG[ct];
+           return (
+             <button
+               key={ct}
+               onClick={() => onChartTypeChange(ct)}
+               title={config.description}
+               className={cn(
+                 "px-2 py-1 rounded-md text-xs font-medium transition-all",
+                 ct === chartType
+                   ? "bg-primary text-primary-foreground shadow-sm"
+                   : "hover:bg-secondary/80 text-muted-foreground hover:text-foreground",
+               )}
+             >
+               {config.label}
+             </button>
+           );
+         })}
+         {/* Non-standard chart types in a dropdown */}
+         <ChartTypeDropdown
+           chartType={chartType}
+           onChartTypeChange={onChartTypeChange}
+           disabled={isReplaying}
+         />
+       </div>
 
       {/* Session replay controls — disabled until the feature is QA'd */}
       {REPLAY_ENABLED && replayAccountId != null && <ReplayHUD accountId={replayAccountId} />}
@@ -364,10 +402,84 @@ export function ChartToolbar({
                   <span className="text-[10px] text-muted-foreground">{ind.pane}</span>
                 </button>
               ))}
-            </div>
-          )}
         </div>
+      )}
+    </div>
+  );
+}
+
+// ── Chart Type Dropdown for Non-Standard Types ──────────────
+
+interface ChartTypeDropdownProps {
+  chartType: ChartType;
+  onChartTypeChange: (ct: ChartType) => void;
+  disabled?: boolean;
+}
+
+function ChartTypeDropdown({
+  chartType,
+  onChartTypeChange,
+  disabled = false,
+}: ChartTypeDropdownProps) {
+  const [open, setOpen] = useState(false);
+  const anchorRef = useRef<HTMLDivElement>(null);
+
+  // Close on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (
+        anchorRef.current &&
+        !anchorRef.current.contains(e.target as Node)
+      ) {
+        setOpen(false);
       }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  return (
+    <div className="relative" ref={anchorRef}>
+      <button
+        onClick={() => setOpen(!open)}
+        disabled={disabled}
+        title="More chart types"
+        className={cn(
+          "px-1.5 py-1 rounded-md text-xs font-medium transition-all",
+          "hover:bg-secondary/80 text-muted-foreground hover:text-foreground",
+          disabled && "opacity-40 cursor-default",
+        )}
+      >
+        <ChevronDown className="h-3 w-3" />
+      </button>
+      {open && (
+        <div className="absolute top-full left-0 mt-1 z-50 bg-popover border border-border rounded-md shadow-lg py-1 min-w-[160px]">
+          {CHART_TYPE_NON_STANDARD.map((ct) => {
+            const config = CHART_TYPE_CONFIG[ct];
+            return (
+              <button
+                key={ct}
+                onClick={() => {
+                  onChartTypeChange(ct);
+                  setOpen(false);
+                }}
+                className={cn(
+                  "w-full flex items-center gap-2 px-3 py-1.5 text-sm text-left hover:bg-secondary",
+                  ct === chartType && "bg-secondary text-primary font-medium",
+                )}
+              >
+                <span>{config.label}</span>
+                <span className="text-[10px] text-muted-foreground ml-auto">
+                  {config.description}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
 
       {/* Drawing Tools — pencil icon with dropdown */}
       {
